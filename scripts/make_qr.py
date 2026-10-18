@@ -142,35 +142,37 @@ def build_poster(qr: Image.Image) -> Image.Image:
     poster = Image.alpha_composite(poster, wave)
     draw = ImageDraw.Draw(poster)
 
-    # logo disc — larger
+    # logo disc — very large brand presence
     logo = trim(Image.open(LOGO).convert("RGBA"))
-    logo.thumbnail((200, 200), Image.Resampling.LANCZOS)
-    disc = logo.size[0] + 30
+    logo.thumbnail((320, 320), Image.Resampling.LANCZOS)
+    disc = logo.size[0] + 36
     badge = Image.new("RGBA", (disc, disc), (0, 0, 0, 0))
     ImageDraw.Draw(badge).ellipse((0, 0, disc - 1, disc - 1), fill=(*CREAM, 255))
     badge.paste(logo, ((disc - logo.size[0]) // 2, (disc - logo.size[1]) // 2), logo)
-    poster.paste(badge, ((W - disc) // 2, 28), badge)
+    poster.paste(badge, ((W - disc) // 2, 18), badge)
+
+    logo_bottom = 18 + disc
 
     # SCAN
-    draw.text((W / 2, 260), "SCAN", fill=CREAM, font=font(140, display=True), anchor="mt")
+    draw.text((W / 2, logo_bottom + 8), "SCAN", fill=CREAM, font=font(132, display=True), anchor="mt")
 
     # pill
     label = "to see our menu"
-    pf = font(32)
+    pf = font(30)
     bb = draw.textbbox((0, 0), label, font=pf)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
-    pw, ph = tw + 58, th + 26
-    px0, py0 = (W - pw) // 2, 395
+    pw, ph = tw + 54, th + 24
+    px0, py0 = (W - pw) // 2, logo_bottom + 130
     draw.rounded_rectangle((px0, py0, px0 + pw, py0 + ph), radius=ph // 2, fill=CREAM)
     draw.text((W / 2, py0 + ph / 2), label, fill=FLAME_DEEP, font=pf, anchor="mm")
 
     # QR
-    target = 380
+    target = 360
     s = target / max(qr.size)
     qr_s = qr.resize((int(qr.size[0] * s), int(qr.size[1] * s)), Image.Resampling.LANCZOS)
     card = rounded_card(qr_s)
     cx = (W - card.size[0]) // 2
-    cy = 455
+    cy = py0 + ph + 28
 
     shadow = Image.new("RGBA", (card.size[0] + 28, card.size[1] + 28), (0, 0, 0, 0))
     ImageDraw.Draw(shadow).rounded_rectangle(
