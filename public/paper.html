@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chicken Boom | منيو ورقي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800;900&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --cream: #fff8e9;
+        --flame: #e0282b;
+        --ink: #2a0a0a;
+        --muted: #7a5a5a;
+        --line: rgba(224, 40, 43, 0.22);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; background: #efe6d4; }
+      body {
+        font-family: "Cairo", system-ui, sans-serif;
+        color: var(--ink);
+      }
+
+      @media screen {
+        .sheet { zoom: 0.62; }
+      }
+
+      .sheet {
+        width: 420mm;
+        min-height: 297mm;
+        margin: 12px auto;
+        background: var(--cream);
+        padding: 8mm 9mm 9mm;
+        box-shadow: 0 12px 40px rgba(42, 10, 10, 0.12);
+      }
+
+      .brand {
+        display: grid;
+        justify-items: center;
+        margin-bottom: 4mm;
+      }
+      .brand img {
+        width: 46mm;
+        height: auto;
+      }
+      .brand p {
+        margin: 0;
+        color: var(--flame);
+        font-weight: 800;
+        font-size: 13pt;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.05fr 1.35fr 1.05fr;
+        gap: 5mm;
+        align-items: start;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid rgba(224, 40, 43, 0.16);
+        border-radius: 4mm;
+        overflow: hidden;
+      }
+
+      .card h2 {
+        margin: 0;
+        padding: 2.2mm 4mm;
+        background: var(--flame);
+        color: #fff;
+        font-size: 14pt;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+      }
+
+      .card .body { padding: 3mm 4mm 4mm; }
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      li { padding: 1.6mm 0; border-bottom: 1px dashed var(--line); }
+      li:last-child { border-bottom: 0; }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 3mm;
+      }
+      .name { font-weight: 800; font-size: 11pt; }
+      .price {
+        color: var(--flame);
+        font-weight: 900;
+        font-size: 11pt;
+        white-space: nowrap;
+      }
+      .price small { font-size: 8pt; font-weight: 800; }
+      .desc {
+        margin: 0.4mm 0 0;
+        color: var(--muted);
+        font-size: 8.5pt;
+        font-weight: 600;
+        line-height: 1.35;
+      }
+
+      .photo {
+        width: 100%;
+        height: 38mm;
+        object-fit: cover;
+        display: block;
+        border-radius: 3mm;
+        margin-top: 3mm;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm 5mm;
+      }
+
+      .sub {
+        margin: 3.5mm 0 1.5mm;
+        padding-bottom: 1mm;
+        border-bottom: 2px solid var(--flame);
+        color: var(--flame);
+        font-size: 12pt;
+        font-weight: 900;
+      }
+      .sub:first-child { margin-top: 0; }
+
+      .photos {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5mm;
+        margin-top: 3mm;
+      }
+      .photos img {
+        width: 100%;
+        height: 28mm;
+        object-fit: cover;
+        border-radius: 3mm;
+      }
+
+      .stack { display: grid; gap: 4mm; }
+
+      @media print {
+        html, body { background: #fff; }
+        .sheet {
+          width: auto;
+          min-height: auto;
+          margin: 0;
+          box-shadow: none;
+        }
+        @page { size: A3 landscape; margin: 8mm; }
+      }
+    </style>
+  </head>
+  <body>
+    <article class="sheet">
+      <header class="brand">
+        <img src="/logo.png" alt="Chicken Boom" />
+        <p>دجاج بنكهة قوية</p>
+      </header>
+
+      <div class="grid">
+        <section class="card">
+          <h2>المقلي</h2>
+          <div class="body">
+            <ul>
+              <li><div class="row"><span class="name">تشكن بوم</span><span class="price">550 <small>ل.س</small></span></div><p class="desc">دجاج مقلي، حبش مدخن، جبنة موزاريلا، صوص خاص</p></li>
+              <li><div class="row"><span class="name">فاير بوم</span><span class="price">550 <small>ل.س</small></span></div><p class="desc">دجاج مقلي، هالبينو، سلامي، تشيدر</p></li>
+              <li><div class="row"><span class="name">ماليبو</span><span class="price">500 <small>ل.س</small></span></div><p class="desc">اسكالوب، حبش مدخن، موزاريلا</p></li>
+              <li><div class="row"><span class="name">سوبريم</span><span class="price">500 <small>ل.س</small></span></div><p class="desc">قطع اسكالوب، فطر، بيبروني، موزاريلا</p></li>
+              <li><div class="row"><span class="name">كريسبي بوم</span><span class="price">550 <small>ل.س</small></span></div><p class="desc">دجاج مقلي، باربكيو، حبش مدخن، موزاريلا</p></li>
+              <li><div class="row"><span class="name">كرانشي</span><span class="price">650 <small>ل.س</small></span></div><p class="desc">دجاج مقلي، موزاريلا، تشيدر، حبش مدخن</p></li>
+              <li><div class="row"><span class="name">تويستر</span><span class="price">500 <small>ل.س</small></span></div><p class="desc">دجاج مقلي، ذرة، بيبروني، تشيدر</p></li>
+            </ul>
+            <img class="photo" src="/cats/fried.jpg" alt="" />
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>المشوي</h2>
+          <div class="body">
+            <div class="split">
+              <ul>
+                <li><div class="row"><span class="name">فكس مكس</span><span class="price">500</span></div><p class="desc">فتايل مشوية، بصل مشوي، فليفلة، بندورة، باربكيو</p></li>
+                <li><div class="row"><span class="name">فهيتا</span><span class="price">450</span></div><p class="desc">دجاج مشوي، بصل، فليفلة، فطر، ذرة، موزاريلا</p></li>
+                <li><div class="row"><span class="name">ماغنوم</span><span class="price">550</span></div><p class="desc">دجاج مشوي، فليفلة، فطر، ذرة، بيبروني، موزاريلا</p></li>
+                <li><div class="row"><span class="name">بروسيليا</span><span class="price">500</span></div><p class="desc">دجاج مشوي، فليفلة، فطر، هوت دوغ، موزاريلا، كريمة</p></li>
+                <li><div class="row"><span class="name">فرانشيسكو</span><span class="price">450</span></div><p class="desc">دجاج مشوي، فطر، ذرة، موزاريلا</p></li>
+              </ul>
+              <ul>
+                <li><div class="row"><span class="name">فيلاديلفيا</span><span class="price">600</span></div><p class="desc">شرحات مشوية، بصل، فليفلة، فطر، موزاريلا</p></li>
+                <li><div class="row"><span class="name">ميكسيكان</span><span class="price">600</span></div><p class="desc">دجاج مشوي، بصل، فليفلة، ذرة، فطر، صوص حار، موزاريلا</p></li>
+                <li><div class="row"><span class="name">شرحات كريمة</span><span class="price">450</span></div><p class="desc">شرحات مشوية، فطر، كريمة، موزاريلا</p></li>
+                <li><div class="row"><span class="name">شيش طاووق</span><span class="price">400</span></div><p class="desc">شيش مشوي، سلطة كولسلو، بطاطا</p></li>
+                <li><div class="row"><span class="name">تشكن ساب</span><span class="price">450</span></div><p class="desc">شرحات مشوية، خس، ذرة، مخلل، موزاريلا</p></li>
+              </ul>
+            </div>
+            <img class="photo" src="/cats/grilled.jpg" alt="" />
+          </div>
+        </section>
+
+        <div class="stack">
+          <section class="card">
+            <h2>البرغر</h2>
+            <div class="body">
+              <h3 class="sub">برغر لحمة</h3>
+              <ul>
+                <li><div class="row"><span class="name">ماشروم برغر</span><span class="price">600</span></div><p class="desc">لحمة، مايونيز، خس، صوص الماشروم</p></li>
+                <li><div class="row"><span class="name">تشيز برغر</span><span class="price">500</span></div><p class="desc">لحمة، مايونيز، خس، بصل، تشيدر</p></li>
+                <li><div class="row"><span class="name">كلاسيك برغر</span><span class="price">550</span></div><p class="desc">لحمة، خس، بندورة، بصل</p></li>
+              </ul>
+              <h3 class="sub">برغر دجاج</h3>
+              <ul>
+                <li><div class="row"><span class="name">برغر بوم مشوي</span><span class="price">400</span></div><p class="desc">دجاج مشوي، خس، مايونيز، صوص من اختيارك</p></li>
+                <li><div class="row"><span class="name">برغر بوم مقلي</span><span class="price">400</span></div><p class="desc">دجاج مقلي، خس، مايونيز، صوص من اختيارك</p></li>
+              </ul>
+              <div class="photos">
+                <img src="/cats/beef-burger.jpg" alt="" />
+                <img src="/cats/chicken-burger.jpg" alt="" />
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2>المقبلات</h2>
+            <div class="body">
+              <div class="split">
+                <ul>
+                  <li><div class="row"><span class="name">بطاطا</span><span class="price">250</span></div></li>
+                  <li><div class="row"><span class="name">بطاطا تشيدر</span><span class="price">450</span></div></li>
+                  <li><div class="row"><span class="name">بطاطا تشيدر هالبينو</span><span class="price">450</span></div></li>
+                  <li><div class="row"><span class="name">حلقات بصل مقلي</span><span class="price">250</span></div></li>
+                </ul>
+                <ul>
+                  <li><div class="row"><span class="name">سلطة ذرة</span><span class="price">250</span></div></li>
+                  <li><div class="row"><span class="name">سلطة سيزر</span><span class="price">400</span></div></li>
+                  <li><div class="row"><span class="name">باستا</span><span class="price">250</span></div></li>
+                </ul>
+              </div>
+              <img class="photo" src="/cats/sides.jpg" alt="" style="height: 26mm" />
+            </div>
+          </section>
+        </div>
+      </div>
+    </article>
+  </body>
+</html>
