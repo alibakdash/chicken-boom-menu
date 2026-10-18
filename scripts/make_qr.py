@@ -125,54 +125,57 @@ def prepare_chicken(max_w: int) -> Image.Image:
 
 def build_poster(qr: Image.Image) -> Image.Image:
     W, H = 1080, 1620
-    poster = textured_red(W, H)
 
-    # cream wave — deep curve like the reference (not a flat split)
-    wave_top = int(H * 0.76)
-    wave = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    wd = ImageDraw.Draw(wave)
-    pts = [(0, H), (0, wave_top + 70)]
+    # base = cream (top + bottom match)
+    poster = Image.new("RGBA", (W, H), (*CREAM, 255))
+
+    # —— large logo on cream top ——
+    logo = trim(Image.open(LOGO).convert("RGBA"))
+    logo.thumbnail((340, 340), Image.Resampling.LANCZOS)
+    logo_y = 28
+    poster.paste(logo, ((W - logo.size[0]) // 2, logo_y), logo)
+    logo_bottom = logo_y + logo.size[1]
+
+    # —— red middle band (wavy top & bottom) ——
+    red_top = logo_bottom + 18
+    red_bottom = int(H * 0.74)
+    red_band = textured_red(W, H)
+    mask = Image.new("L", (W, H), 0)
+    md = ImageDraw.Draw(mask)
+
+    # polygon: wavy top edge then wavy bottom edge
+    pts: list[tuple[int, int]] = []
     for x in range(0, W + 1, 4):
-        # higher in the middle, lower on sides — soft hill
         t = x / W
-        y = wave_top + int(95 * math.sin(math.pi * t)) - 20
+        y = red_top + int(28 * math.sin(math.pi * t))
         pts.append((x, y))
-    pts.append((W, H))
-    wd.polygon(pts, fill=(*CREAM, 255))
-    poster = Image.alpha_composite(poster, wave)
+    for x in range(W, -1, -4):
+        t = x / W
+        y = red_bottom + int(70 * math.sin(math.pi * t)) - 10
+        pts.append((x, y))
+    md.polygon(pts, fill=255)
+    poster = Image.composite(red_band, poster, mask)
     draw = ImageDraw.Draw(poster)
 
-    # logo disc — very large brand presence
-    logo = trim(Image.open(LOGO).convert("RGBA"))
-    logo.thumbnail((320, 320), Image.Resampling.LANCZOS)
-    disc = logo.size[0] + 36
-    badge = Image.new("RGBA", (disc, disc), (0, 0, 0, 0))
-    ImageDraw.Draw(badge).ellipse((0, 0, disc - 1, disc - 1), fill=(*CREAM, 255))
-    badge.paste(logo, ((disc - logo.size[0]) // 2, (disc - logo.size[1]) // 2), logo)
-    poster.paste(badge, ((W - disc) // 2, 18), badge)
+    # SCAN + pill + QR live in the red band
+    scan_y = red_top + 36
+    draw.text((W / 2, scan_y), "SCAN", fill=CREAM, font=font(132, display=True), anchor="mt")
 
-    logo_bottom = 18 + disc
-
-    # SCAN
-    draw.text((W / 2, logo_bottom + 8), "SCAN", fill=CREAM, font=font(132, display=True), anchor="mt")
-
-    # pill
     label = "to see our menu"
     pf = font(30)
     bb = draw.textbbox((0, 0), label, font=pf)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
     pw, ph = tw + 54, th + 24
-    px0, py0 = (W - pw) // 2, logo_bottom + 130
+    px0, py0 = (W - pw) // 2, scan_y + 122
     draw.rounded_rectangle((px0, py0, px0 + pw, py0 + ph), radius=ph // 2, fill=CREAM)
     draw.text((W / 2, py0 + ph / 2), label, fill=FLAME_DEEP, font=pf, anchor="mm")
 
-    # QR
-    target = 360
+    target = 340
     s = target / max(qr.size)
     qr_s = qr.resize((int(qr.size[0] * s), int(qr.size[1] * s)), Image.Resampling.LANCZOS)
     card = rounded_card(qr_s)
     cx = (W - card.size[0]) // 2
-    cy = py0 + ph + 28
+    cy = py0 + ph + 24
 
     shadow = Image.new("RGBA", (card.size[0] + 28, card.size[1] + 28), (0, 0, 0, 0))
     ImageDraw.Draw(shadow).rounded_rectangle(
@@ -188,7 +191,7 @@ def build_poster(qr: Image.Image) -> Image.Image:
     signal_arcs(draw, cx - 28, mid, "left")
     signal_arcs(draw, cx + card.size[0] + 28, mid, "right")
 
-    # chicken bridges red + cream (like steak on reference) — centered hero
+    # chicken on cream bottom, bridging into red a little
     if CHICKEN.exists():
         chick = prepare_chicken(int(W * 0.62))
         sw, sh = int(chick.size[0] * 0.78), 48
@@ -197,10 +200,9 @@ def build_poster(qr: Image.Image) -> Image.Image:
         contact = contact.filter(ImageFilter.GaussianBlur(12))
 
         hx = (W - chick.size[0]) // 2
-        # sit on wave crest, overlap red — but keep clear of the QR card
-        qr_bottom = cy + card.size[1] + 10
-        crest = wave_top + 75
-        hy = crest - int(chick.size[1] * 0.58)
+        qr_bottom = cy + card.size[1] + 8
+        crest = red_bottom + 40
+        hy = crest - int(chick.size[1] * 0.55)
         if hy < qr_bottom:
             hy = qr_bottom
         poster.paste(contact, ((W - sw) // 2, hy + chick.size[1] - 36), contact)
