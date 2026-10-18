@@ -1,135 +1,227 @@
 from pathlib import Path
+import math
+import random
 
-import arabic_reshaper
 import qrcode
-from bidi.algorithm import get_display
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from qrcode.constants import ERROR_CORRECT_H
-
-
-def arabic(text: str) -> str:
-    return get_display(arabic_reshaper.reshape(text))
 
 URL = "https://chicken-boom-menu.vercel.app/"
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "public" / "qr-menu.png"
 OUT_PRINT = ROOT / "public" / "qr-poster.png"
-LOGO = ROOT / "public" / "logo.png"
+HERO = ROOT / "public" / "qr-chicken-hero.jpg"
 
-CREAM = (255, 248, 233, 255)
-FLAME = (224, 40, 43, 255)
-YELLOW = (255, 184, 46, 255)
-INK = (42, 10, 10, 255)
-WHITE = (255, 255, 255, 255)
+CREAM = (255, 248, 233)
+CREAM_SOFT = (255, 250, 240)
+FLAME = (224, 40, 43)
+FLAME_DEEP = (185, 28, 31)
+INK = (42, 10, 10)
 
 
-def load_font(size: int, bold: bool = False) -> ImageFont.ImageFont:
-    candidates = [
-        r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
-        r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf",
-        r"C:\Windows\Fonts\tahoma.ttf",
-    ]
+def load_font(size: int, bold: bool = False, display: bool = False) -> ImageFont.ImageFont:
+    if display:
+        candidates = [
+            r"C:\Windows\Fonts\impact.ttf",
+            r"C:\Windows\Fonts\arialbd.ttf",
+            r"C:\Windows\Fonts\segoeuib.ttf",
+        ]
+    else:
+        candidates = [
+            r"C:\Windows\Fonts\arialbd.ttf" if bold else r"C:\Windows\Fonts\arial.ttf",
+            r"C:\Windows\Fonts\segoeuib.ttf" if bold else r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\tahoma.ttf",
+        ]
     for path in candidates:
         if Path(path).exists():
             return ImageFont.truetype(path, size)
     return ImageFont.load_default()
 
 
-def trim(img: Image.Image) -> Image.Image:
-    bbox = img.getbbox()
-    return img.crop(bbox) if bbox else img
+def textured_red(size: tuple[int, int]) -> Image.Image:
+    w, h = size
+    base = Image.new("RGB", size, FLAME)
+    px = base.load()
+    rng = random.Random(42)
+    for y in range(h):
+        for x in range(w):
+            n = rng.randint(-28, 28)
+            wave = int(14 * math.sin(x / 55.0) * math.cos(y / 70.0))
+            r = max(150, min(245, FLAME[0] + n + wave))
+            g = max(20, min(70, FLAME[1] + n // 2))
+            b = max(20, min(70, FLAME[2] + n // 2))
+            # deeper top vignette
+            shade = int((y / h) * 18)
+            px[x, y] = (max(130, r - shade), max(15, g - shade // 2), max(15, b - shade // 2))
+    # soft marble streaks
+    overlay = Image.new("RGBA", size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    for i in range(18):
+        y0 = rng.randint(0, h)
+        od.line(
+            [(0, y0), (w, y0 + rng.randint(-120, 120))],
+            fill=(255, 255, 255, rng.randint(8, 22)),
+            width=rng.randint(40, 90),
+        )
+    overlay = overlay.filter(ImageFilter.GaussianBlur(28))
+    return Image.alpha_composite(base.convert("RGBA"), overlay).convert("RGB")
 
 
-def build_qr() -> Image.Image:
+def build_qr(with_logo: bool = False) -> Image.Image:
     qr = qrcode.QRCode(
         version=None,
         error_correction=ERROR_CORRECT_H,
-        box_size=18,
+        box_size=16,
         border=2,
     )
     qr.add_data(URL)
     qr.make(fit=True)
-    qr_img = qr.make_image(fill_color=(224, 40, 43), back_color=(255, 248, 233)).convert(
-        "RGBA"
-    )
+    return qr.make_image(fill_color=FLAME, back_color=CREAM).convert("RGBA")
 
-    logo = trim(Image.open(LOGO).convert("RGBA"))
-    logo_max = int(qr_img.size[0] * 0.26)
-    logo.thumbnail((logo_max, logo_max), Image.Resampling.LANCZOS)
 
-    pad = 18
-    plate_size = max(logo.size) + pad * 2
-    plate = Image.new("RGBA", (plate_size, plate_size), (0, 0, 0, 0))
-    pd = ImageDraw.Draw(plate)
-    pd.rounded_rectangle(
-        (0, 0, plate_size - 1, plate_size - 1),
-        radius=plate_size // 2,
-        fill=WHITE,
-    )
-    pd.ellipse((3, 3, plate_size - 4, plate_size - 4), outline=YELLOW, width=6)
-    plate.paste(logo, ((plate_size - logo.size[0]) // 2, (plate_size - logo.size[1]) // 2), logo)
+def draw_signal(draw: ImageDraw.ImageDraw, cx: int, cy: int, facing: str) -> None:
+    """WiFi-like arcs pointing toward the QR."""
+    for i, radius in enumerate((28, 48, 68)):
+        width = 7 - i
+        bbox = [cx - radius, cy - radius, cx + radius, cy + radius]
+        if facing == "right":
+            # arcs open to the right (on left side of QR)
+            draw.arc(bbox, start=300, end=60, fill=CREAM, width=width)
+        else:
+            draw.arc(bbox, start=120, end=240, fill=CREAM, width=width)
 
-    pos = ((qr_img.size[0] - plate_size) // 2, (qr_img.size[1] - plate_size) // 2)
-    qr_img.paste(plate, pos, plate)
-    return qr_img
+
+def rounded_rect_mask(size: tuple[int, int], radius: int) -> Image.Image:
+    mask = Image.new("L", size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, size[0] - 1, size[1] - 1), radius=radius, fill=255)
+    return mask
 
 
 def build_poster(qr_img: Image.Image) -> Image.Image:
-    w, h = 1080, 1480
-    poster = Image.new("RGBA", (w, h), CREAM)
+    w, h = 1080, 1620
+    poster = textured_red((w, h)).convert("RGBA")
     draw = ImageDraw.Draw(poster)
 
-    draw.rectangle((0, 0, w, 220), fill=YELLOW)
-    draw.rectangle((0, h - 160, w, h), fill=FLAME)
-    draw.rectangle((0, 220, 18, h - 160), fill=FLAME)
-    draw.rectangle((w - 18, 220, w, h - 160), fill=FLAME)
+    # cream wave bottom
+    wave = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    wd = ImageDraw.Draw(wave)
+    wave_y = int(h * 0.72)
+    points = [(0, h), (0, wave_y)]
+    for x in range(0, w + 1, 8):
+        y = wave_y + int(48 * math.sin((x / w) * math.pi))
+        points.append((x, y))
+    points.append((w, h))
+    wd.polygon(points, fill=CREAM + (255,))
+    poster = Image.alpha_composite(poster, wave)
+    draw = ImageDraw.Draw(poster)
 
-    header_logo = trim(Image.open(LOGO).convert("RGBA"))
-    header_logo.thumbnail((170, 170), Image.Resampling.LANCZOS)
-    poster.paste(header_logo, ((w - header_logo.size[0]) // 2, 28), header_logo)
+    # brand / handle row
+    draw.text((w // 2, 70), "CHICKEN BOOM", fill=CREAM, font=load_font(28, True), anchor="mt")
 
-    draw.text(
-        (w // 2, 270),
-        arabic("امسح لفتح المنيو"),
-        fill=FLAME,
-        font=load_font(54, True),
-        anchor="mt",
+    # SCAN
+    draw.text((w // 2, 190), "SCAN", fill=CREAM, font=load_font(168, True, display=True), anchor="mt")
+
+    # pill CTA
+    pill_text = "to see our menu"
+    pill_font = load_font(36, True)
+    tb = draw.textbbox((0, 0), pill_text, font=pill_font)
+    tw, th = tb[2] - tb[0], tb[3] - tb[1]
+    pill_w, pill_h = tw + 70, th + 34
+    pill_x = (w - pill_w) // 2
+    pill_y = 360
+    draw.rounded_rectangle(
+        (pill_x, pill_y, pill_x + pill_w, pill_y + pill_h),
+        radius=pill_h // 2,
+        fill=CREAM,
     )
-    draw.text((w // 2, 340), "Scan to open the menu", fill=INK, font=load_font(28), anchor="mt")
+    draw.text(
+        (w // 2, pill_y + pill_h // 2),
+        pill_text,
+        fill=FLAME_DEEP,
+        font=pill_font,
+        anchor="mm",
+    )
 
-    card_pad = 40
-    scale = min(720 / qr_img.size[0], 720 / qr_img.size[1])
+    # QR card
+    card_pad = 36
+    target = 460
+    scale = target / max(qr_img.size)
     qr_big = qr_img.resize(
         (int(qr_img.size[0] * scale), int(qr_img.size[1] * scale)),
         Image.Resampling.LANCZOS,
     )
-    cw, ch = qr_big.size[0] + card_pad * 2, qr_big.size[1] + card_pad * 2
-    card = Image.new("RGBA", (cw, ch), WHITE)
-    cd = ImageDraw.Draw(card)
-    cd.rounded_rectangle((0, 0, cw - 1, ch - 1), radius=36, fill=WHITE, outline=YELLOW, width=8)
-    card.paste(qr_big, (card_pad, card_pad), qr_big)
+    cw = qr_big.size[0] + card_pad * 2
+    ch = qr_big.size[1] + card_pad * 2
+    card = Image.new("RGBA", (cw, ch), CREAM + (255,))
+    mask = rounded_rect_mask((cw, ch), 28)
+    card_draw = ImageDraw.Draw(card)
+    card_draw.rounded_rectangle((0, 0, cw - 1, ch - 1), radius=28, fill=CREAM, outline=CREAM)
+    card.paste(qr_big, (card_pad, card_pad))
+    card.putalpha(mask)
 
     cx = (w - cw) // 2
-    cy = 400
-    shadow = Image.new("RGBA", (cw + 20, ch + 20), (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shadow)
-    sd.rounded_rectangle((10, 10, cw + 10, ch + 10), radius=36, fill=(42, 10, 10, 40))
-    poster.paste(shadow, (cx - 10, cy - 4), shadow)
+    cy = 470
+    # soft shadow under card
+    shadow = Image.new("RGBA", (cw + 24, ch + 24), (0, 0, 0, 0))
+    ImageDraw.Draw(shadow).rounded_rectangle(
+        (8, 10, cw + 8, ch + 12),
+        radius=30,
+        fill=(42, 10, 10, 55),
+    )
+    shadow = shadow.filter(ImageFilter.GaussianBlur(10))
+    poster.paste(shadow, (cx - 8, cy - 4), shadow)
     poster.paste(card, (cx, cy), card)
 
-    draw.text(
-        (w // 2, h - 100),
-        "chicken-boom-menu.vercel.app",
-        fill=WHITE,
-        font=load_font(30, True),
-        anchor="mt",
-    )
-    draw.text((w // 2, h - 55), "CHICKEN BOOM", fill=YELLOW, font=load_font(26, True), anchor="mt")
+    # signal arcs
+    mid_y = cy + ch // 2
+    draw_signal(draw, cx - 36, mid_y, "right")
+    draw_signal(draw, cx + cw + 36, mid_y, "left")
+
+    # crispy chicken hero on the wave (like the steak in the reference)
+    if HERO.exists():
+        from PIL import ImageChops
+
+        hero = Image.open(HERO).convert("RGBA")
+        # focus crop on the chicken stack
+        bw, bh = hero.size
+        hero = hero.crop((int(bw * 0.08), int(bh * 0.02), int(bw * 0.92), int(bh * 0.92)))
+
+        # punch out near-cream background so it sits clean on the wave
+        datas = hero.getdata()
+        new_data = []
+        for r, g, b, a in datas:
+            if r > 235 and g > 225 and b > 200:
+                new_data.append((r, g, b, 0))
+            elif r > 220 and g > 210 and b > 185:
+                new_data.append((r, g, b, 90))
+            else:
+                new_data.append((r, g, b, a))
+        hero.putdata(new_data)
+
+        hero_w = int(w * 1.05)
+        ratio = hero_w / hero.size[0]
+        hero = hero.resize((hero_w, int(hero.size[1] * ratio)), Image.Resampling.LANCZOS)
+
+        # soft bottom fade into cream curve
+        fade = Image.new("L", hero.size, 255)
+        fd = ImageDraw.Draw(fade)
+        fade_h = int(hero.size[1] * 0.18)
+        for i in range(fade_h):
+            alpha = int(255 * (1 - i / fade_h))
+            fd.line([(0, hero.size[1] - 1 - i), (hero.size[0], hero.size[1] - 1 - i)], fill=alpha)
+        r, g, b, a = hero.split()
+        hero = Image.merge("RGBA", (r, g, b, ImageChops.multiply(a, fade)))
+
+        hx = (w - hero.size[0]) // 2
+        hy = int(h * 0.68) - 20
+        poster.paste(hero, (hx, hy), hero)
+
     return poster.convert("RGB")
 
 
 def main() -> None:
     qr_img = build_qr()
+    # clean QR for sharing / print embeds
     qr_img.save(OUT, "PNG", optimize=True)
     print(f"saved {OUT} {qr_img.size}")
 
