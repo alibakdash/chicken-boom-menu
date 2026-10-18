@@ -186,34 +186,23 @@ def build_poster(qr_img: Image.Image) -> Image.Image:
         bw, bh = hero.size
         hero = hero.crop((int(bw * 0.08), int(bh * 0.02), int(bw * 0.92), int(bh * 0.92)))
 
-        # punch out near-cream background so it sits clean on the wave
-        datas = hero.getdata()
-        new_data = []
-        for r, g, b, a in datas:
-            if r > 235 and g > 225 and b > 200:
-                new_data.append((r, g, b, 0))
-            elif r > 220 and g > 210 and b > 185:
-                new_data.append((r, g, b, 90))
-            else:
-                new_data.append((r, g, b, a))
-        hero.putdata(new_data)
-
-        hero_w = int(w * 1.05)
+        hero_w = int(w * 0.98)
         ratio = hero_w / hero.size[0]
         hero = hero.resize((hero_w, int(hero.size[1] * ratio)), Image.Resampling.LANCZOS)
 
-        # soft bottom fade into cream curve
-        fade = Image.new("L", hero.size, 255)
-        fd = ImageDraw.Draw(fade)
-        fade_h = int(hero.size[1] * 0.18)
-        for i in range(fade_h):
-            alpha = int(255 * (1 - i / fade_h))
-            fd.line([(0, hero.size[1] - 1 - i), (hero.size[0], hero.size[1] - 1 - i)], fill=alpha)
+        # soft oval mask so chicken sits naturally on the cream wave
+        mask = Image.new("L", hero.size, 0)
+        md = ImageDraw.Draw(mask)
+        md.ellipse(
+            (-int(hero.size[0] * 0.05), int(hero.size[1] * 0.05), int(hero.size[0] * 1.05), int(hero.size[1] * 1.15)),
+            fill=255,
+        )
+        mask = mask.filter(ImageFilter.GaussianBlur(18))
         r, g, b, a = hero.split()
-        hero = Image.merge("RGBA", (r, g, b, ImageChops.multiply(a, fade)))
+        hero = Image.merge("RGBA", (r, g, b, ImageChops.multiply(a, mask)))
 
         hx = (w - hero.size[0]) // 2
-        hy = int(h * 0.68) - 20
+        hy = int(h * 0.70)
         poster.paste(hero, (hx, hy), hero)
 
     return poster.convert("RGB")
