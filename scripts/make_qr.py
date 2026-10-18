@@ -142,17 +142,17 @@ def build_poster(qr: Image.Image) -> Image.Image:
     poster = Image.alpha_composite(poster, wave)
     draw = ImageDraw.Draw(poster)
 
-    # logo disc
+    # logo disc — larger
     logo = trim(Image.open(LOGO).convert("RGBA"))
-    logo.thumbnail((138, 138), Image.Resampling.LANCZOS)
-    disc = logo.size[0] + 26
+    logo.thumbnail((200, 200), Image.Resampling.LANCZOS)
+    disc = logo.size[0] + 30
     badge = Image.new("RGBA", (disc, disc), (0, 0, 0, 0))
     ImageDraw.Draw(badge).ellipse((0, 0, disc - 1, disc - 1), fill=(*CREAM, 255))
     badge.paste(logo, ((disc - logo.size[0]) // 2, (disc - logo.size[1]) // 2), logo)
-    poster.paste(badge, ((W - disc) // 2, 42), badge)
+    poster.paste(badge, ((W - disc) // 2, 28), badge)
 
     # SCAN
-    draw.text((W / 2, 210), "SCAN", fill=CREAM, font=font(148, display=True), anchor="mt")
+    draw.text((W / 2, 260), "SCAN", fill=CREAM, font=font(140, display=True), anchor="mt")
 
     # pill
     label = "to see our menu"
@@ -160,17 +160,17 @@ def build_poster(qr: Image.Image) -> Image.Image:
     bb = draw.textbbox((0, 0), label, font=pf)
     tw, th = bb[2] - bb[0], bb[3] - bb[1]
     pw, ph = tw + 58, th + 26
-    px0, py0 = (W - pw) // 2, 355
+    px0, py0 = (W - pw) // 2, 395
     draw.rounded_rectangle((px0, py0, px0 + pw, py0 + ph), radius=ph // 2, fill=CREAM)
     draw.text((W / 2, py0 + ph / 2), label, fill=FLAME_DEEP, font=pf, anchor="mm")
 
-    # QR (slightly smaller so food can breathe and bridge)
-    target = 390
+    # QR
+    target = 380
     s = target / max(qr.size)
     qr_s = qr.resize((int(qr.size[0] * s), int(qr.size[1] * s)), Image.Resampling.LANCZOS)
     card = rounded_card(qr_s)
     cx = (W - card.size[0]) // 2
-    cy = 420
+    cy = 455
 
     shadow = Image.new("RGBA", (card.size[0] + 28, card.size[1] + 28), (0, 0, 0, 0))
     ImageDraw.Draw(shadow).rounded_rectangle(
@@ -188,30 +188,21 @@ def build_poster(qr: Image.Image) -> Image.Image:
 
     # chicken bridges red + cream (like steak on reference) — centered hero
     if CHICKEN.exists():
-        chick = prepare_chicken(int(W * 0.78))
-        sw, sh = int(chick.size[0] * 0.78), 56
+        chick = prepare_chicken(int(W * 0.62))
+        sw, sh = int(chick.size[0] * 0.78), 48
         contact = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
-        ImageDraw.Draw(contact).ellipse((0, 0, sw - 1, sh - 1), fill=(42, 10, 10, 50))
+        ImageDraw.Draw(contact).ellipse((0, 0, sw - 1, sh - 1), fill=(42, 10, 10, 45))
         contact = contact.filter(ImageFilter.GaussianBlur(12))
 
         hx = (W - chick.size[0]) // 2
         # sit on wave crest, overlap red — but keep clear of the QR card
-        qr_bottom = cy + card.size[1] + 8
+        qr_bottom = cy + card.size[1] + 10
         crest = wave_top + 75
-        hy = crest - int(chick.size[1] * 0.62)
+        hy = crest - int(chick.size[1] * 0.58)
         if hy < qr_bottom:
             hy = qr_bottom
-        poster.paste(contact, ((W - sw) // 2, hy + chick.size[1] - 42), contact)
+        poster.paste(contact, ((W - sw) // 2, hy + chick.size[1] - 36), contact)
         poster.paste(chick, (hx, hy), chick)
-
-    # URL in cream footer under the food
-    draw.text(
-        (W / 2, H - 38),
-        "chicken-boom-menu.vercel.app",
-        fill=INK,
-        font=font(22),
-        anchor="mt",
-    )
 
     return poster.convert("RGB")
 
